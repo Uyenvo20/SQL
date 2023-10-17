@@ -1,0 +1,31 @@
+SELECT
+	DATE(om.C_TIME) AS date_order,
+	'Weblime' AS "channel",
+	CASE cc.CAT_NAME
+		WHEN 'ÁO KHOÁC' THEN 'ÁO KHOÁC'
+		WHEN 'ÁO THUN' THEN 'ÁO THUN'
+		WHEN 'ÁO KIỂU' THEN 'ÁO THUN'
+		WHEN 'QUẦN JEAN' THEN 'QUẦN'
+		WHEN 'QUẦN PANTS' THEN 'QUẦN'
+		WHEN 'VÁY' THEN 'VÁY'
+		WHEN 'ÁO SƠ MI' THEN 'ÁO SƠ MI'
+		WHEN 'ĐẦM' THEN 'ÁO ĐẦM'
+		ELSE 'KHÁC'
+	END AS cat,
+	pd.PRD_CLT AS collection,
+	SUM(od.ORD_QTY) AS qty,
+	SUM(od.ORD_QTY * od.SALE_PRICE)  AS total_amount
+FROM TBL_ORD_MAIN om
+	LEFT JOIN TBL_ORD_DETAIL od ON om.ORD_CODE=od.ORD_CODE
+	LEFT JOIN TBL_PRD_MAIN pm ON od.PRD_CODE=pm.PRD_CODE
+	LEFT JOIN TBL_PRD_DETAIL pd ON pm.PRD_GRP=pd.PRD_GRP
+	LEFT JOIN TBL_CODE_BRD_CAT bc ON pm.BC_CODE=bc.BC_CODE
+	LEFT JOIN TBL_CODE_CAT cc ON bc.CAT_CODE=cc.CAT_CODE
+WHERE om.ORD_STATUS BETWEEN 60 AND 82
+	AND om.ORD_STATUS != 61 # This order status present for cancelled order
+	AND cc.CAT_STATUS = 'A' # There are another category that not active anymore
+	AND bc.CAT_STATUS = 'A' # There are another category that not active anymore
+GROUP BY
+	DATE(om.C_TIME),
+	cc.CAT_NAME,
+	pd.PRD_CLT
