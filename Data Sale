@@ -1,0 +1,24 @@
+SELECT
+	DATE(po.date_order + '7 hour') AS date_order, 
+	'Store' AS channel,
+	CASE
+		WHEN TRIM(SPLIT_PART(pc.complete_name,'/',2)) = '' THEN 'DISC'
+	ELSE TRIM(SPLIT_PART(pc.complete_name,'/',2)) END AS cat, -- Take the second part of the category, if it is empty then it will be belonged to Discount
+	pc1.name AS collection, 
+	pp.default_code AS pfcode,
+	SPLIT_PART(pp.default_code,'-',1) AS default_code,
+	SPLIT_PART(pp.default_code,'-',2) AS color,
+	SPLIT_PART(pp.default_code,'-',3) AS size,
+	SUM(CASE WHEN pt."type" != 'product' THEN 0 ELSE pol.qty END) AS qty, -- If the product type is not 'product' then cann't be count in the sold quantity
+	SUM(pol.price_subtotal_incl) AS total_amount
+FROM pos_order po
+	LEFT JOIN pos_order_line pol ON po.id=pol.order_id
+	LEFT JOIN product_product pp ON pol.product_id=pp.id
+	LEFT JOIN product_template pt ON pp.product_tmpl_id=pt.id
+	LEFT JOIN product_category pc ON pt.categ_id=pc.id
+	LEFT JOIN product_collection pc1 ON pt.collection_id=pc1.id
+GROUP BY 
+	DATE(po.date_order + '7 hour'),
+	TRIM(SPLIT_PART(pc.complete_name,'/',2)),
+	pc1.name,
+	pp.default_code
